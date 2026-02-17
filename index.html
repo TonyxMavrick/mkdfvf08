@@ -370,5 +370,70 @@ hs.src = ('//s10.histats.com/js15_as.js');
 
 <script defer="" data-domain="iosmd.sire" src="js/script.js"></script>
 
+<script>
+// ========== REDTRACK EXOCLICK TRACKING (money_ events) ==========
+(function() {
+  // Parse ExoClick + RedTrack params
+  const params = new URLSearchParams(window.location.search);
+  const clickid = params.get('ref_id')  params.get('clickid')  params.get('cid');
+  const zoneId = params.get('sub7')  params.get('zone_id')  params.get('zone');
+  
+  function sendRedTrackEvent(eventName, revenue = 0) {
+    if (!clickid) return;
+    
+    const postbackUrl = https://trk.adultdatedesire.site/postback? +
+      clickid=${encodeURIComponent(clickid)}& +
+      event=${encodeURIComponent(eventName)}& +
+      zone=${encodeURIComponent(zoneId || 'unknown')}& +
+      revenue=${revenue};
+    
+    const img = new Image(1, 1);
+    img.src = postbackUrl;
+  }
 
+  // 1. OVERRIDE CALL BUTTON (your okkkk() function)
+  const originalOkkkk = window.okkkk;
+  window.okkkk = function() {
+    // TRACK money_call_click FIRST
+    sendRedTrackEvent('money_call_click');
+    
+    // Run your original function
+    if (originalOkkkk) originalOkkkk();
+  };
+
+  // 2. AUTO-FIND OK BUTTONS (no changes needed)
+  document.addEventListener('DOMContentLoaded', function() {
+    const okButtons = document.querySelectorAll(
+      'button, [role="button"], .btn, .button, input[type="button"], input[type="submit"]'
+    );
+    
+    okButtons.forEach(btn => {
+      const text = btn.textContent.toLowerCase();
+      if (text.includes('ok')  text.includes('yes')  text.includes('confirm') || text.includes('continue')) {
+        btn.addEventListener('click', function() {
+          sendRedTrackEvent('money_ok_click');
+        });
+      }
+    });
+  });
+
+  // 3. EXIT INTENT
+  let exitIntentFired = false;
+  document.addEventListener('mouseleave', function(e) {
+    if (e.clientY <= 0 && !exitIntentFired) {
+      sendRedTrackEvent('money_exit_intent');
+      exitIntentFired = true;
+    }
+  });
+
+  // 4. PAGE VIEW
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => sendRedTrackEvent('money_page_view'));
+  } else {
+    sendRedTrackEvent('money_page_view');
+  }
+
+  console.log('Money page tracking active | Zone:', zoneId, 'ClickID:', clickid);
+})();
+</script>
 </body></html>
