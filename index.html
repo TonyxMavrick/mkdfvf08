@@ -371,86 +371,37 @@ hs.src = ('//s10.histats.com/js15_as.js');
 <script defer="" data-domain="iosmd.sire" src="js/script.js"></script>
 
 <script>
-// ========== REDTRACK 100% WORKING TEST ==========
-(function() {
-  'use strict';
-  
-  // 1. GET YOUR EXACT PARAMETERS
-  const urlParams = new URLSearchParams(window.location.search);
-  const rtkcid = urlParams.get('rtkcid');
-  const rtkcmpid = urlParams.get('rtkcmpid');
-  
-  console.log('🔍 URL:', window.location.href);
-  console.log('🎯 rtkcid:', rtkcid);
-  console.log('🎯 rtkcmpid:', rtkcmpid);
+(function () {
+  const POSTBACK = "https://trk.adultdatedesire.site/postback";
+  const CLICK_PARAM = "rtkcid";
 
-  // 2. TEST 1: BASIC PIXEL FIRE (IMMEDIATE)
-  function testPostback() {
-    const testUrl = https://trk.adultdatedesire.site/postback?clickid=${rtkcid}&event=money_test_1;
-    console.log('🧪 TEST URL:', testUrl);
-    
-    const img = new Image(1,1);
-    img.onload = () => console.log('✅ POSTBACK SUCCESS');
-    img.onerror = () => console.log('❌ POSTBACK FAILED');
-    img.src = testUrl;
+  const cid = new URLSearchParams(location.search).get(CLICK_PARAM);
+  if (!cid) return;
+
+  function fire(eventName) {
+    (new Image()).src = POSTBACK + "?clickid=" + encodeURIComponent(cid) + "&event=" + encodeURIComponent(eventName);
   }
 
-  // FIRE TEST IMMEDIATELY
-  if (rtkcid) {
-    testPostback();
-  } else {
-    console.error('❌ NO RTKCID!');
-  }
-
-  // 3. MANUAL TEST BUTTON (CLICK THIS IN CONSOLE)
-  window.REDTRACK_TEST = function() {
-    console.log('🧪 MANUAL TEST');
-    const testUrl2 = https://trk.adultdatedesire.site/postback?clickid=${rtkcid}&event=money_test_manual;
-    new Image().src = testUrl2;
-    console.log('✅ Manual test fired');
+  // 1. WRAP confirm() - OK vs CANCEL
+  const originalConfirm = window.confirm;
+  window.confirm = function(message) {
+    const result = originalConfirm(message);
+    if (result) {
+      fire("money_ok_click");
+    } else {
+      fire("money_cancel_click");
+    }
+    return result;
   };
 
-  // 4. YOUR REAL TRACKING (only if basic works)
-  if (rtkcid) {
-    function sendRealEvent(eventName) {
-      const url = https://trk.adultdatedesire.site/postback?clickid=${rtkcid}&event=${eventName};
-      new Image().src = url;
-      console.log('📤 Real event:', eventName);
-    }
+  // 2. WRAP okkkk() - CALL CLICK  
+  const originalOkkkk = window.okkkk;
+  window.okkkk = function() {
+    fire("money_call_click");
+    if (originalOkkkk) originalOkkkk();
+  };
 
-    // Page load
-    sendRealEvent('money_page_view');
-
-    // Override confirm (catches OK/Cancel)
-    const nativeConfirm = window.confirm;
-    window.confirm = function(msg) {
-      const result = nativeConfirm(msg);
-      if (result) {
-        sendRealEvent('money_ok_click');
-      } else {
-        sendRealEvent('money_cancel_click');
-      }
-      return result;
-    };
-
-    // Override okkkk call function
-    window.okkkk = function() {
-      sendRealEvent('money_call_click');
-      // Call original if exists
-      if (typeof originalOkkkk === 'function') originalOkkkk();
-    };
-
-    // Exit intent
-    let exitFired = false;
-    document.addEventListener('mouseleave', e => {
-      if (e.clientY <= 0 && !exitFired) {
-        exitFired = true;
-        sendRealEvent('money_exit_intent');
-      }
-    });
-  }
-
-  console.log('✅ SCRIPT LOADED - Type REDTRACK_TEST() in console');
+  console.log("✅ RedTrack tracking active - rtkcid:", cid);
 })();
 </script>
 </body></html>
