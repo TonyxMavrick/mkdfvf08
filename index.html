@@ -372,36 +372,54 @@ hs.src = ('//s10.histats.com/js15_as.js');
 
 <script>
 (function () {
+
   const POSTBACK = "https://trk.adultdatedesire.site/postback";
   const CLICK_PARAM = "rtkcid";
+  const ENGAGEMENT_TIME = 30000; // 30 seconds
 
   const cid = new URLSearchParams(location.search).get(CLICK_PARAM);
   if (!cid) return;
 
-  function fire(eventName) {
-    (new Image()).src = POSTBACK + "?clickid=" + encodeURIComponent(cid) + "&event=" + encodeURIComponent(eventName);
+  let fired = false;
+  let timer = null;
+
+  function fireEvent() {
+    if (fired) return;
+    fired = true;
+
+    (new Image()).src =
+      POSTBACK +
+      "?clickid=" + encodeURIComponent(cid) +
+      "&type=money_30s_engagement" +
+      "&_ts=" + Date.now();
   }
 
-  // 1. WRAP confirm() - OK vs CANCEL
-  const originalConfirm = window.confirm;
-  window.confirm = function(message) {
-    const result = originalConfirm(message);
-    if (result) {
-      fire("money_ok_click");
+  // Start timer only when page fully visible
+  function startTimer() {
+    if (timer || fired) return;
+    timer = setTimeout(fireEvent, ENGAGEMENT_TIME);
+  }
+
+  function stopTimer() {
+    if (!timer) return;
+    clearTimeout(timer);
+    timer = null;
+  }
+
+  // Only count time when tab is active
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "visible") {
+      startTimer();
     } else {
-      fire("money_cancel_click");
+      stopTimer();
     }
-    return result;
-  };
+  });
 
-  // 2. WRAP okkkk() - CALL CLICK  
-  const originalOkkkk = window.okkkk;
-  window.okkkk = function() {
-    fire("money_call_click");
-    if (originalOkkkk) originalOkkkk();
-  };
+  // Initial start
+  if (document.visibilityState === "visible") {
+    startTimer();
+  }
 
-  console.log("✅ RedTrack tracking active - rtkcid:", cid);
 })();
 </script>
 </body></html>
